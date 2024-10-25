@@ -1,15 +1,47 @@
 #!/usr/bin/python3
-import random
 import sys
-from time import sleep
-import datetime
 
-for i in range(10000):
-    sleep(random.random())
-    sys.stdout.write("{:d}.{:d}.{:d}.{:d} - [{}] \"GET /projects/260 HTTP/1.1\" {} {}\n".format(
-        random.randint(1, 255), random.randint(1, 255), random.randint(1, 255), random.randint(1, 255),
-        datetime.datetime.now(),
-        random.choice([200, 301, 400, 401, 403, 404, 405, 500]),
-        random.randint(1, 1024)
-    ))
-    sys.stdout.flush()
+# Initialize total size and status code counts
+total_size = 0
+status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
+line_count = 0
+
+
+def print_stats():
+    """Prints the total file size and the count of status codes"""
+    print(f"File size: {total_size}")
+    for code in sorted(status_codes):
+        if status_codes[code] > 0:
+            print(f"{code}: {status_codes[code]}")
+
+
+try:
+    for line in sys.stdin:
+        try:
+            parts = line.split(" ")
+            if len(parts) < 7:
+                continue
+
+            # Extracting the file size and status code
+            status_code = int(parts[-2])
+            file_size = int(parts[-1])
+
+            # Updating metrics
+            total_size += file_size
+            if status_code in status_codes:
+                status_codes[status_code] += 1
+
+            line_count += 1
+
+            # Print stats every 10 lines
+            if line_count % 10 == 0:
+                print_stats()
+
+        except Exception:
+            continue
+
+except KeyboardInterrupt:
+    print_stats()
+    raise
+
+print_stats()
